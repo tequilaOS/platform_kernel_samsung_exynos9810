@@ -21,7 +21,7 @@
 
 		abox_rmem@0xEA800000 {
 			compatible = "exynos,abox_rmem";
-			reg = <0x0 0xfb200000 0x2800000>;
+			reg = <0x0 0xfb200000 0x400000>;
 			linux,phandle = <0x146>;
 			phandle = <0x146>;
 		};
