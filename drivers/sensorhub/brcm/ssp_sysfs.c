@@ -579,12 +579,27 @@ static ssize_t set_mcu_power(struct device *dev,
 static ssize_t set_ssp_control(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t size)
 {
+	struct ssp_data *data = dev_get_drvdata(dev);
+
 	pr_info("[SSP] SSP_CONTROL : %s\n", buf);
 
 	if (strstr(buf, SSP_DEBUG_TIME_FLAG_ON))
 		ssp_debug_time_flag = true;
 	else if (strstr(buf, SSP_DEBUG_TIME_FLAG_OFF))
 		ssp_debug_time_flag = false;
+	else if (strstr(buf, SSP_HALL_IC_ON) || strstr(buf, SSP_HALL_IC_OFF)) {
+		int iRet = 0;
+		data->hall_ic_status = strstr(buf, SSP_HALL_IC_ON) ? 1 : 0;
+	
+		iRet = send_hall_ic_status(data->hall_ic_status);
+
+		if (iRet != SUCCESS) {
+			pr_err("[SSP]: %s - hall ic command, failed %d\n", __func__, iRet);
+			return iRet;
+		}
+
+		pr_info("[SSP] %s HALL IC ON/OFF, %d enabled %d\n", __func__, iRet, data->hall_ic_status);
+	}
 
 	return size;
 }
