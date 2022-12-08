@@ -1444,17 +1444,8 @@ int vb2_core_qbuf(struct vb2_queue *q, unsigned int index, void *pb)
 	if (q->streaming && !q->start_streaming_called &&
 	    q->queued_count >= q->min_buffers_needed) {
 		ret = vb2_start_streaming(q);
-		if (ret) {
-			/*
-			 * Since vb2_core_qbuf will return with an error,
-			 * we should return it to state DEQUEUED since
-			 * the error indicates that the buffer wasn't queued.
-			 */
-			list_del(&vb->queued_entry);
-			q->queued_count--;
-			vb->state = orig_state;
+		if (ret)
 			return ret;
-		}
 	}
 
 	dprintk(1, "qbuf of buffer %d succeeded\n", vb->index);
