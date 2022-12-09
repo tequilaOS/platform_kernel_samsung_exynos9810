@@ -1082,6 +1082,17 @@ static int cpufreq_add_policy_cpu(struct cpufreq_policy *policy, unsigned int cp
 	if (cpumask_test_cpu(cpu, policy->cpus))
 		return 0;
 
+#if defined (CONFIG_CPU_FREQ_GOV_SCHEDUTIL)
+	/*
+	 * If current governor is schedutil and hp governor is enabled,
+	 * using sugov_fast_start for reducing hp time
+	 */
+	if (((cpu != policy->cpu) && !cpufreq_suspended) &&
+		(policy->governor && !strncasecmp(policy->governor->name, "schedutil", CPUFREQ_NAME_LEN)))
+		if (sugov_fast_start(policy, cpu))
+				return 0;
+#endif
+
 	down_write(&policy->rwsem);
 	if (has_target())
 		cpufreq_stop_governor(policy);
@@ -2654,6 +2665,14 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 }
 EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 
+/*
+ * Stop cpufreq at shutdown to make sure it isn't holding any locks
+ * or mutexes when secondary CPUs are halted.
+ */
+static struct syscore_ops cpufreq_syscore_ops = {
+	.shutdown = cpufreq_suspend,
+};
+
 struct kobject *cpufreq_global_kobject;
 EXPORT_SYMBOL(cpufreq_global_kobject);
 
@@ -2664,6 +2683,8 @@ static int __init cpufreq_core_init(void)
 
 	cpufreq_global_kobject = kobject_create_and_add("cpufreq", &cpu_subsys.dev_root->kobj);
 	BUG_ON(!cpufreq_global_kobject);
+
+	register_syscore_ops(&cpufreq_syscore_ops);
 
 	return 0;
 }
